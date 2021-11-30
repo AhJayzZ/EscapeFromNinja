@@ -1,4 +1,4 @@
-# 公眾交通運輸查詢系統 PTX System PTX System
+# 逃離忍者追殺 Escape From Ninja
 
 ## 簡介 Introduction
 一個突然無聊想設計的遊戲，原本在聽音樂，發現這個背景音樂好像跟忍者蠻搭的，就突然做起來了..
