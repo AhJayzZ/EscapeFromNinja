@@ -5,7 +5,8 @@ from PyQt5.QtGui import *
 
 from .Ui_files.Ui_mainWindow import Ui_mainWindow
 
-from vlc import Instance
+from pygame import mixer
+import vlc
 import playsound
 import cv2
 import random
@@ -26,6 +27,9 @@ EDGE_DISTANCE = 60
 DAMAGE = 5
 
 class MainPage(QMainWindow,Ui_mainWindow):
+    """
+    Main Page
+    """
     def __init__(self):
         super(MainPage,self).__init__()
         self.setupUi(self)
@@ -38,6 +42,9 @@ class MainPage(QMainWindow,Ui_mainWindow):
         self.playBGM()
 
     def initialize(self):
+        """
+        intializing all setting
+        """
         self.ninja = []
         self.ninjaCount = 0
         self.aliveTime = 0
@@ -51,15 +58,24 @@ class MainPage(QMainWindow,Ui_mainWindow):
         self.respawnTimer.start(self.respawnTime)
 
     def imageToPixmap(self,image):
+        """
+        covert image to PyQt Pixmap
+        """
         convertedImage = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         height, width = convertedImage.shape[:2]
         return QPixmap.fromImage(QImage(convertedImage, width, height, QImage.Format_RGB888))
 
     def createMainCharacter(self):
+        """
+        create main character
+        """
         self.mainCharacterLabel.setScaledContents(True)
         self.mainCharacterLabel.setPixmap(self.imageToPixmap(MAIN_CHARACTER_IMAGE))
     
     def respawnNinja(self):
+        """
+        respawn ninja check and change configuration
+        """
         if self.ninjaCount < NINJA_MAX:
             if self.respawnTime > RESPAWN_TIME_MIN :
                 self.respawnTime -= TIME_AMOUNT
@@ -67,6 +83,9 @@ class MainPage(QMainWindow,Ui_mainWindow):
             self.createNinja()
 
     def createNinja(self):
+        """
+        create a new ninjaLabel and set pixmap
+        """
         x = random.randint(0,self.width()-EDGE_DISTANCE)
         y = random.randint(0,self.height()-EDGE_DISTANCE)
         self.ninja.append(QLabel(self.centralwidget))
@@ -77,16 +96,25 @@ class MainPage(QMainWindow,Ui_mainWindow):
         self.respawnTimer.start(self.respawnTime)
 
     def playBGM(self):
-        playInstance = Instance('--loop')
-        self.player = playInstance.media_player_new()
-        self.player.set_media(playInstance.media_new(BGM_PATH))
-        self.player.play()
+        """
+        play BGM
+        """
+        mixer.init()
+        mixer.music.load(BGM_PATH)
+        mixer.music.play(-1)
+
 
     def aliveTimeCount(self):
+        """
+        Counting alive time
+        """
         self.aliveTime += 1
         self.noticeLabel.setText('存活時間(s): '+str(self.aliveTime)+' 忍者數量: '+str(self.ninjaCount)+' 重生時間(ms): '+str(self.respawnTime))
 
     def approaching(self,mover,target):
+        """
+        mover approaching target
+        """
         moverPos = mover.pos()
         targetPos = target.pos()
         if moverPos.x() <= targetPos.x():
@@ -103,6 +131,9 @@ class MainPage(QMainWindow,Ui_mainWindow):
             self.minusHP()
 
     def minusHP(self):
+        """
+        change health bar value and check health value
+        """
         self.healthBar.setValue(self.healthBar.value() - DAMAGE)
         playsound.playsound(HURT_SOUND)
         if self.healthBar.value() == 0:
@@ -115,6 +146,9 @@ class MainPage(QMainWindow,Ui_mainWindow):
     
 
     def randomMoving(self):
+        """
+        pick random ninja moving
+        """
         self.randomMover = random.randint(0,NINJA_MAX-1)
         for index in range(self.randomMover):
             try:
@@ -123,6 +157,9 @@ class MainPage(QMainWindow,Ui_mainWindow):
                 pass
 
     def keyPressEvent(self,event):
+        """
+        key press event
+        """
         pos = self.mainCharacterLabel.pos()
         # Up
         if ((event.key() == Qt.Key_Up or event.key() == Qt.Key_W) and 
