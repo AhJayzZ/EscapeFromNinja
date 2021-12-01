@@ -22,7 +22,7 @@ TIME_AMOUNT = 10
 MOVE_AMOUNT = 20
 NINJA_MAX = 100
 DETECTED_DISTANCE = 50
-EDGE_DISTANCE = 60
+EDGE_DISTANCE = 50
 DAMAGE = 5
 
 class MainPage(QMainWindow,Ui_mainWindow):
@@ -118,22 +118,19 @@ class MainPage(QMainWindow,Ui_mainWindow):
 
     def keyPressEvent(self,event):
         pos = self.mainCharacterLabel.pos()
-        if event.key() == Qt.Key_Up or event.key() == Qt.Key_W:
+        # Up
+        if ((event.key() == Qt.Key_Up or event.key() == Qt.Key_W) and 
+            (pos.y() - MOVE_AMOUNT > 0)) :
             self.mainCharacterLabel.move(pos.x(),pos.y()-MOVE_AMOUNT)
-        elif event.key() == Qt.Key_Down or event.key() == Qt.Key_S:
+        # Down
+        elif ((event.key() == Qt.Key_Down or event.key() == Qt.Key_S) and 
+            (pos.y() + MOVE_AMOUNT < self.height() - EDGE_DISTANCE)):
             self.mainCharacterLabel.move(pos.x(),pos.y()+MOVE_AMOUNT)
-        elif event.key() == Qt.Key_Left or event.key() == Qt.Key_A:
+        # Left
+        elif ((event.key() == Qt.Key_Left or event.key() == Qt.Key_A) and 
+            (pos.x() - MOVE_AMOUNT > 0)) :
             self.mainCharacterLabel.move(pos.x()-MOVE_AMOUNT,pos.y())
-        elif event.key() == Qt.Key_Right or event.key() == Qt.Key_D:
+        # Right
+        elif ((event.key() == Qt.Key_Right or event.key() == Qt.Key_D) and 
+            (pos.x() + MOVE_AMOUNT < self.width() - EDGE_DISTANCE)):
             self.mainCharacterLabel.move(pos.x()+MOVE_AMOUNT,pos.y())
-        self.checkOutOfSize(pos)
-
-    def checkOutOfSize(self,pos):
-        if pos.x() > self.width()-EDGE_DISTANCE:
-            self.mainCharacterLabel.move(pos.x()-MOVE_AMOUNT,pos.y())
-        if pos.x() < 0:
-            self.mainCharacterLabel.move(pos.x()+MOVE_AMOUNT,pos.y())
-        if pos.y() > self.height()-EDGE_DISTANCE:
-            self.mainCharacterLabel.move(pos.x(),pos.y()-MOVE_AMOUNT)
-        if pos.y() < 0:
-            self.mainCharacterLabel.move(pos.x(),pos.y()+MOVE_AMOUNT)
