@@ -15,13 +15,14 @@ BGM_PATH = 'UI/sound/bgm.mp3'
 MAIN_CHARACTER_IMAGE = cv2.imread('UI/images/mainCharacter.jpg')
 NINJA_IMAGE = cv2.imread('UI/images/ninja.png')
 
-MOVING_TRIGGER = 300
+MOVING_TRIGGER = 500
 RESPAWN_TRIGGER = 1000
 RESPAWN_TIME_MIN = 300
 TIME_AMOUNT = 10
-MOVE_AMOUNT = 30
+MOVE_AMOUNT = 20
 NINJA_MAX = 100
 DETECTED_DISTANCE = 50
+EDGE_DISTANCE = 60
 DAMAGE = 5
 
 class MainPage(QMainWindow,Ui_mainWindow):
@@ -63,8 +64,8 @@ class MainPage(QMainWindow,Ui_mainWindow):
             self.createNinja()
 
     def createNinja(self):
-        x = random.randint(0,self.width()-50)
-        y = random.randint(0,self.height()-50)
+        x = random.randint(0,self.width()-EDGE_DISTANCE)
+        y = random.randint(0,self.height()-EDGE_DISTANCE)
         self.ninja.append(QLabel(self.centralwidget))
         self.ninja[self.ninjaCount-1].setScaledContents(True)
         self.ninja[self.ninjaCount-1].setGeometry(QRect(x,y,60,60))
@@ -117,16 +118,22 @@ class MainPage(QMainWindow,Ui_mainWindow):
 
     def keyPressEvent(self,event):
         pos = self.mainCharacterLabel.pos()
-        if (pos.x() < self.width() and pos.y() < self.height() and pos.x() > 0 and pos.y() > 0):
-            if event.key() == Qt.Key_Up or event.key() == Qt.Key_W:
-                self.mainCharacterLabel.move(pos.x(),pos.y()-MOVE_AMOUNT)
-            elif event.key() == Qt.Key_Down or event.key() == Qt.Key_S:
-                self.mainCharacterLabel.move(pos.x(),pos.y()+MOVE_AMOUNT)
-            elif event.key() == Qt.Key_Left or event.key() == Qt.Key_A:
-                self.mainCharacterLabel.move(pos.x()-MOVE_AMOUNT,pos.y())
-            elif event.key() == Qt.Key_Right or event.key() == Qt.Key_D:
-                self.mainCharacterLabel.move(pos.x()+MOVE_AMOUNT,pos.y())
+        if event.key() == Qt.Key_Up or event.key() == Qt.Key_W:
+            self.mainCharacterLabel.move(pos.x(),pos.y()-MOVE_AMOUNT)
+        elif event.key() == Qt.Key_Down or event.key() == Qt.Key_S:
+            self.mainCharacterLabel.move(pos.x(),pos.y()+MOVE_AMOUNT)
+        elif event.key() == Qt.Key_Left or event.key() == Qt.Key_A:
+            self.mainCharacterLabel.move(pos.x()-MOVE_AMOUNT,pos.y())
+        elif event.key() == Qt.Key_Right or event.key() == Qt.Key_D:
+            self.mainCharacterLabel.move(pos.x()+MOVE_AMOUNT,pos.y())
+        self.checkOutOfSize(pos)
 
-    
-        
-        
+    def checkOutOfSize(self,pos):
+        if pos.x() > self.width()-EDGE_DISTANCE:
+            self.mainCharacterLabel.move(pos.x()-MOVE_AMOUNT,pos.y())
+        if pos.x() < 0:
+            self.mainCharacterLabel.move(pos.x()+MOVE_AMOUNT,pos.y())
+        if pos.y() > self.height()-EDGE_DISTANCE:
+            self.mainCharacterLabel.move(pos.x(),pos.y()-MOVE_AMOUNT)
+        if pos.y() < 0:
+            self.mainCharacterLabel.move(pos.x(),pos.y()+MOVE_AMOUNT)
