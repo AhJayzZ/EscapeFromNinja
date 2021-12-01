@@ -15,14 +15,14 @@ BGM_PATH = 'UI/sound/bgm.mp3'
 MAIN_CHARACTER_IMAGE = cv2.imread('UI/images/mainCharacter.jpg')
 NINJA_IMAGE = cv2.imread('UI/images/ninja.png')
 
-MOVING_TRIGGER = 500
-RESPAWN_TRIGGER = 1000
-RESPAWN_TIME_MIN = 300
+MOVING_TRIGGER = 300
+RESPAWN_TIME_INIT = 1000
+RESPAWN_TIME_MIN = 200
 TIME_AMOUNT = 10
 MOVE_AMOUNT = 20
-NINJA_MAX = 100
-DETECTED_DISTANCE = 50
-EDGE_DISTANCE = 50
+NINJA_MAX = 300
+DETECTED_DISTANCE = 60
+EDGE_DISTANCE = 60
 DAMAGE = 5
 
 class MainPage(QMainWindow,Ui_mainWindow):
@@ -40,12 +40,15 @@ class MainPage(QMainWindow,Ui_mainWindow):
     def initialize(self):
         self.ninja = []
         self.ninjaCount = 0
-        self.timeCount = 1000
+        self.aliveTime = 0
+        self.respawnTime = RESPAWN_TIME_INIT
 
+        self.aliveTimer = QTimer(timeout=self.aliveTimeCount)
+        self.aliveTimer.start(1000)
         self.movingTimer = QTimer(timeout=self.randomMoving)
         self.movingTimer.start(MOVING_TRIGGER)
         self.respawnTimer = QTimer(timeout=self.respawnNinja)
-        self.respawnTimer.start(RESPAWN_TRIGGER)
+        self.respawnTimer.start(self.respawnTime)
 
     def imageToPixmap(self,image):
         convertedImage = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -58,8 +61,8 @@ class MainPage(QMainWindow,Ui_mainWindow):
     
     def respawnNinja(self):
         if self.ninjaCount < NINJA_MAX:
-            if self.timeCount > RESPAWN_TIME_MIN :
-                self.timeCount -= TIME_AMOUNT
+            if self.respawnTime > RESPAWN_TIME_MIN :
+                self.respawnTime -= TIME_AMOUNT
             self.ninjaCount += 1
             self.createNinja()
 
@@ -71,14 +74,17 @@ class MainPage(QMainWindow,Ui_mainWindow):
         self.ninja[self.ninjaCount-1].setGeometry(QRect(x,y,60,60))
         self.ninja[self.ninjaCount-1].setPixmap(self.imageToPixmap(NINJA_IMAGE))
         self.ninja[self.ninjaCount-1].show()
-        self.respawnTimer.start(self.timeCount)
-        print('忍者數量:',self.ninjaCount,'重生時間(ms):',self.timeCount)
+        self.respawnTimer.start(self.respawnTime)
 
     def playBGM(self):
         playInstance = Instance('--loop')
         self.player = playInstance.media_player_new()
         self.player.set_media(playInstance.media_new(BGM_PATH))
         self.player.play()
+
+    def aliveTimeCount(self):
+        self.aliveTime += 1
+        self.noticeLabel.setText('存活時間(s): '+str(self.aliveTime)+' 忍者數量: '+str(self.ninjaCount)+' 重生時間(ms): '+str(self.respawnTime))
 
     def approaching(self,mover,target):
         moverPos = mover.pos()
@@ -103,9 +109,9 @@ class MainPage(QMainWindow,Ui_mainWindow):
             self.respawnTimer.stop()
             self.movingTimer.stop()
             QMessageBox(icon=QMessageBox.Information,
-                            windowTitle='你好爛',
-                            text='哈哈 廢物').exec_()
-            sys.exit()
+                            windowTitle='Game Over',
+                            text='Game Over 重來吧~').exec_()
+        sys.exit
     
 
     def randomMoving(self):
@@ -123,14 +129,14 @@ class MainPage(QMainWindow,Ui_mainWindow):
             (pos.y() - MOVE_AMOUNT > 0)) :
             self.mainCharacterLabel.move(pos.x(),pos.y()-MOVE_AMOUNT)
         # Down
-        elif ((event.key() == Qt.Key_Down or event.key() == Qt.Key_S) and 
-            (pos.y() + MOVE_AMOUNT < self.height() - EDGE_DISTANCE)):
+        if ((event.key() == Qt.Key_Down or event.key() == Qt.Key_S) and 
+            (pos.y() + MOVE_AMOUNT < self.height()-DETECTED_DISTANCE)):
             self.mainCharacterLabel.move(pos.x(),pos.y()+MOVE_AMOUNT)
         # Left
-        elif ((event.key() == Qt.Key_Left or event.key() == Qt.Key_A) and 
+        if ((event.key() == Qt.Key_Left or event.key() == Qt.Key_A) and 
             (pos.x() - MOVE_AMOUNT > 0)) :
             self.mainCharacterLabel.move(pos.x()-MOVE_AMOUNT,pos.y())
         # Right
-        elif ((event.key() == Qt.Key_Right or event.key() == Qt.Key_D) and 
-            (pos.x() + MOVE_AMOUNT < self.width() - EDGE_DISTANCE)):
+        if ((event.key() == Qt.Key_Right or event.key() == Qt.Key_D) and 
+            (pos.x() + MOVE_AMOUNT < self.width()-DETECTED_DISTANCE)):
             self.mainCharacterLabel.move(pos.x()+MOVE_AMOUNT,pos.y())
