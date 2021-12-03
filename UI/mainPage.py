@@ -6,7 +6,6 @@ from PyQt5.QtGui import *
 from .Ui_files.Ui_mainWindow import Ui_mainWindow
 
 from pygame import mixer
-import vlc
 import playsound
 import cv2
 import random
@@ -137,12 +136,13 @@ class MainPage(QMainWindow,Ui_mainWindow):
         self.healthBar.setValue(self.healthBar.value() - DAMAGE)
         playsound.playsound(HURT_SOUND)
         if self.healthBar.value() == 0:
+            self.aliveTime.stop()
             self.respawnTimer.stop()
             self.movingTimer.stop()
             QMessageBox(icon=QMessageBox.Information,
                             windowTitle='Game Over',
                             text='Game Over 重來吧~').exec_()
-        sys.exit
+            sys.exit
     
 
     def randomMoving(self):
