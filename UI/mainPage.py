@@ -1,3 +1,4 @@
+from os import system
 import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -80,13 +81,20 @@ class MainPage(QMainWindow,Ui_mainWindow):
                 self.respawnTime -= TIME_AMOUNT
             self.ninjaCount += 1
             self.createNinja()
+    
+    def generateRandomXY(self):
+        """
+        generate random x,y points
+        """
+        x = random.randint(0,self.width()-EDGE_DISTANCE)
+        y = random.randint(0,self.height()-EDGE_DISTANCE)
+        return x,y
 
     def createNinja(self):
         """
         create a new ninjaLabel and set pixmap
         """
-        x = random.randint(0,self.width()-EDGE_DISTANCE)
-        y = random.randint(0,self.height()-EDGE_DISTANCE)
+        x,y = self.generateRandomXY()
         self.ninja.append(QLabel(self.centralwidget))
         self.ninja[self.ninjaCount-1].setScaledContents(True)
         self.ninja[self.ninjaCount-1].setGeometry(QRect(x,y,60,60))
@@ -101,7 +109,6 @@ class MainPage(QMainWindow,Ui_mainWindow):
         mixer.init()
         mixer.music.load(BGM_PATH)
         mixer.music.play(-1)
-
 
     def aliveTimeCount(self):
         """
@@ -133,28 +140,30 @@ class MainPage(QMainWindow,Ui_mainWindow):
         """
         change health bar value and check health value
         """
-        self.healthBar.setValue(self.healthBar.value() - DAMAGE)
         playsound.playsound(HURT_SOUND)
-        if self.healthBar.value() == 0:
-            self.aliveTime.stop()
+        self.healthBar.setValue(self.healthBar.value() - DAMAGE)
+        if self.healthBar.value() <= 0:
+            self.aliveTimer.stop()
             self.respawnTimer.stop()
             self.movingTimer.stop()
-            QMessageBox(icon=QMessageBox.Information,
-                            windowTitle='Game Over',
-                            text='Game Over 重來吧~').exec_()
-            sys.exit
-    
+            self.gameOver()
 
+    def gameOver(self,):
+        """
+        game over
+        """
+        QMessageBox(icon=QMessageBox.Information,
+                    windowTitle='Game Over',
+                    text='Game Over 重來吧~').exec_()
+        sys.exit()
+            
     def randomMoving(self):
         """
         pick random ninja moving
         """
-        self.randomMover = random.randint(0,NINJA_MAX-1)
-        for index in range(self.randomMover):
-            try:
-                self.approaching(self.ninja[index],self.mainCharacterLabel)
-            except:
-                pass
+        randomMover = random.randint(0,self.ninjaCount)
+        for index in range(randomMover):
+            self.approaching(self.ninja[index],self.mainCharacterLabel)
 
     def keyPressEvent(self,event):
         """
