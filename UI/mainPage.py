@@ -1,4 +1,3 @@
-from os import system
 import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
@@ -15,14 +14,16 @@ HURT_SOUND = 'UI/sound/hurt.wav'
 BGM_PATH = 'UI/sound/bgm.mp3'
 MAIN_CHARACTER_IMAGE = cv2.imread('UI/images/mainCharacter.jpg')
 NINJA_IMAGE = cv2.imread('UI/images/ninja.png')
+DISAPPEAR_IMAGE = cv2.imread('UI/images/disappear.png')
 
-MOVING_TRIGGER = 300
+MOVING_TRIGGER = 200
+TELEPORT_TRIGGER = 2000
 RESPAWN_TIME_INIT = 1000
 RESPAWN_TIME_MIN = 200
 TIME_AMOUNT = 10
 MOVE_AMOUNT = 20
-NINJA_MAX = 300
-DETECTED_DISTANCE = 60
+NINJA_MAX = 200
+DETECTED_DISTANCE = 50
 EDGE_DISTANCE = 60
 DAMAGE = 5
 
@@ -54,6 +55,8 @@ class MainPage(QMainWindow,Ui_mainWindow):
         self.aliveTimer.start(1000)
         self.movingTimer = QTimer(timeout=self.randomMoving)
         self.movingTimer.start(MOVING_TRIGGER)
+        self.teleportTimer = QTimer(timeout=self.randomTeleport)
+        self.teleportTimer.start(TELEPORT_TRIGGER)
         self.respawnTimer = QTimer(timeout=self.respawnNinja)
         self.respawnTimer.start(self.respawnTime)
 
@@ -112,7 +115,7 @@ class MainPage(QMainWindow,Ui_mainWindow):
 
     def aliveTimeCount(self):
         """
-        Counting alive time
+        counting alive time
         """
         self.aliveTime += 1
         self.noticeLabel.setText('存活時間(s): '+str(self.aliveTime)+' 忍者數量: '+str(self.ninjaCount)+' 重生時間(ms): '+str(self.respawnTime))
@@ -140,21 +143,29 @@ class MainPage(QMainWindow,Ui_mainWindow):
         """
         change health bar value and check health value
         """
-        playsound.playsound(HURT_SOUND)
+        self.callHurtSound()
         self.healthBar.setValue(self.healthBar.value() - DAMAGE)
         if self.healthBar.value() <= 0:
             self.aliveTimer.stop()
             self.respawnTimer.stop()
             self.movingTimer.stop()
+            self.teleportTimer.stop()
             self.gameOver()
+    
+    def callHurtSound(self):
+        """
+        hurt sound thread called
+        """
+        hurtSound_thread = hurtSound_Thread(self)
+        hurtSound_thread.start()
 
-    def gameOver(self,):
+    def gameOver(self):
         """
         game over
         """
         QMessageBox(icon=QMessageBox.Information,
                     windowTitle='Game Over',
-                    text='Game Over 重來吧~').exec_()
+                    text='你存活了{}秒喔~'.format(self.aliveTime)).exec_()
         sys.exit()
             
     def randomMoving(self):
@@ -162,8 +173,19 @@ class MainPage(QMainWindow,Ui_mainWindow):
         pick random ninja moving
         """
         randomMover = random.randint(0,self.ninjaCount)
-        for index in range(randomMover):
+        for _ in range(randomMover):
+            index = random.randint(0,self.ninjaCount-1)
+            #self.ninja[index].setPixmap(self.imageToPixmap(NINJA_IMAGE))
             self.approaching(self.ninja[index],self.mainCharacterLabel)
+    
+    def randomTeleport(self):
+        randomTeleporter = random.randint(0,int(self.ninjaCount/5))
+        for index in range(randomTeleporter):
+            x,y = self.generateRandomXY()
+            self.ninja[index].move(x,y)
+            # self.disappear_Thread = disappear_Thread(self,self.ninja[index])
+            # self.disappear_Thread.start()
+            
 
     def keyPressEvent(self,event):
         """
@@ -186,3 +208,39 @@ class MainPage(QMainWindow,Ui_mainWindow):
         if ((event.key() == Qt.Key_Right or event.key() == Qt.Key_D) and 
             (pos.x() + MOVE_AMOUNT < self.width()-DETECTED_DISTANCE)):
             self.mainCharacterLabel.move(pos.x()+MOVE_AMOUNT,pos.y())
+    
+
+    def keyReleaseEvent(self,event):
+        self.keyPressEvent(event)
+
+
+# -----------------------------------------------Threading-----------------------------------------------
+
+class hurtSound_Thread(QThread):
+    """
+    hurt sound thread
+    """
+    def __init__(self,parent):
+        super().__init__(parent)
+        self.hurtSound = HURT_SOUND
+    
+    def run(self):
+        playsound.playsound(self.hurtSound)
+
+
+class disappear_Thread(QThread):
+    """
+    main characacter attack thread(unfinished)
+    """
+    def __init__(self,parent,ninja):
+        super().__init__(parent)
+        self.mainWindow = parent
+        self.ninja = ninja
+    
+    def run(self) -> None:
+        self.ninja.setPixmap(self.loadImage())
+        self.ninja.setEnabled(False)
+
+    def loadImage(self):
+        return self.mainWindow.imageToPixmap(DISAPPEAR_IMAGE)
+    
