@@ -31,5 +31,5 @@
 ## 成果 Result
 
 - ### 遊戲畫面
-    ![](https://i.imgur.com/GdgiVc8.png)
+    ![](https://i.imgur.com/VXurroF.png)
     
