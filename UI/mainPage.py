@@ -1,8 +1,8 @@
 import sys
+import time
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
-from pygame.constants import PREALLOC
 
 from .Ui_files.Ui_mainWindow import Ui_mainWindow
 
@@ -10,8 +10,6 @@ from pygame import mixer
 import playsound
 import cv2
 import random
-
-import time
 
 HURT_SOUND = 'UI/sound/hurt.wav'
 DISAPPEAR_SOUND = 'UI/sound/disappear.wav'
@@ -21,7 +19,7 @@ MAIN_CHARACTER_IMAGE = cv2.imread('UI/images/mainCharacter.jpg')
 NINJA_IMAGE = cv2.imread('UI/images/ninja.png')
 DISAPPEAR_IMAGE = cv2.imread('UI/images/disappear.png')
 
-MOVING_TRIGGER = 300
+MOVING_TRIGGER = 100
 TELEPORT_TRIGGER = 2000
 RESPAWN_TIME_INIT = 1000
 RESPAWN_TIME_MIN = 200
@@ -30,7 +28,7 @@ MOVE_AMOUNT = 20
 NINJA_MAX = 150
 DETECTED_DISTANCE = 50
 EDGE_DISTANCE = 60
-DAMAGE = 5
+DAMAGE = 1
 
 class MainPage(QMainWindow,Ui_mainWindow):
     """
@@ -123,7 +121,9 @@ class MainPage(QMainWindow,Ui_mainWindow):
         counting alive time
         """
         self.aliveTime += 1
-        self.noticeLabel.setText('存活時間(s): '+str(self.aliveTime)+' 忍者數量: '+str(self.ninjaCount)+' 重生時間(ms): '+str(self.respawnTime))
+        self.noticeLabel.setText('存活時間(s): ' + str(self.aliveTime) +
+                                ' 忍者數量: ' + str(self.ninjaCount) + 
+                                ' 重生時間(ms): ' + str(self.respawnTime))
 
     def approaching(self,mover,target):
         """
@@ -177,7 +177,7 @@ class MainPage(QMainWindow,Ui_mainWindow):
         """
         pick random ninja moving
         """
-        randomMover = random.randint(0,self.ninjaCount)
+        randomMover = random.randint(0,self.ninjaCount)   
         for _ in range(randomMover):
             index = random.randint(0,self.ninjaCount-1)
             self.ninja[index].setPixmap(self.imageToPixmap(NINJA_IMAGE))
@@ -208,7 +208,10 @@ class MainPage(QMainWindow,Ui_mainWindow):
         if ((event.key() == Qt.Key_Right or event.key() == Qt.Key_D) and 
             (pos.x() + MOVE_AMOUNT < self.width()-DETECTED_DISTANCE)):
             self.mainCharacterLabel.move(pos.x()+MOVE_AMOUNT,pos.y())
-    
+
+        if (event.key() == Qt.Key_Space):
+            x,y = self.generateRandomXY()
+            self.mainCharacterLabel.move(x,y)
 
     def keyReleaseEvent(self,event):
         self.keyPressEvent(event)
@@ -235,23 +238,16 @@ class teleport_Thread(QThread):
     def __init__(self,parent):
         super().__init__(parent)
         self.mainWindow = parent
-        self.ninjaCount = parent.ninjaCount
-        self.randomTeleporter = random.randint(0,int(self.ninjaCount/5))
         self.soundSignal.connect(self.playSound)
+        self.randomTeleporter = random.randint(0,int(self.mainWindow.ninjaCount/5))
     
     def run(self) -> None:
         for i in range(self.randomTeleporter):
-            randomIndex = random.randint(0,self.ninjaCount-1)
-            self.mainWindow.ninja[randomIndex].setPixmap(self.loadImage(DISAPPEAR_IMAGE))
-            self.soundSignal.emit(1)
-            x,y = self.generateRandomXY()
+            randomIndex = random.randint(0,self.mainWindow.ninjaCount-1)
+            self.mainWindow.ninja[randomIndex].setPixmap(self.mainWindow.imageToPixmap(DISAPPEAR_IMAGE))
+            x,y = self.mainWindow.generateRandomXY()
             self.mainWindow.ninja[randomIndex].move(x,y)
-
-    def loadImage(self,image):
-        return self.mainWindow.imageToPixmap(image)
-    
-    def generateRandomXY(self):
-        return self.mainWindow.generateRandomXY()
+        self.soundSignal.emit(1)
 
     def playSound(self):
         playSound = playSound_Thread(self,DISAPPEAR_SOUND)

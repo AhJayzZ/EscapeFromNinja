@@ -7,4 +7,4 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     initialPage = MainPage()
     initialPage.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec_()) 
