@@ -2,6 +2,7 @@ import sys
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
+from pygame.constants import PREALLOC
 
 from .Ui_files.Ui_mainWindow import Ui_mainWindow
 
@@ -10,8 +11,12 @@ import playsound
 import cv2
 import random
 
+import time
+
 HURT_SOUND = 'UI/sound/hurt.wav'
+DISAPPEAR_SOUND = 'UI/sound/disappear.wav'
 BGM_PATH = 'UI/sound/bgm.mp3'
+
 MAIN_CHARACTER_IMAGE = cv2.imread('UI/images/mainCharacter.jpg')
 NINJA_IMAGE = cv2.imread('UI/images/ninja.png')
 DISAPPEAR_IMAGE = cv2.imread('UI/images/disappear.png')
@@ -156,7 +161,7 @@ class MainPage(QMainWindow,Ui_mainWindow):
         """
         hurt sound thread called
         """
-        hurtSound_thread = hurtSound_Thread(self)
+        hurtSound_thread = playSound_Thread(self,HURT_SOUND)
         hurtSound_thread.start()
 
     def gameOver(self):
@@ -175,17 +180,13 @@ class MainPage(QMainWindow,Ui_mainWindow):
         randomMover = random.randint(0,self.ninjaCount)
         for _ in range(randomMover):
             index = random.randint(0,self.ninjaCount-1)
-            #self.ninja[index].setPixmap(self.imageToPixmap(NINJA_IMAGE))
+            self.ninja[index].setPixmap(self.imageToPixmap(NINJA_IMAGE))
             self.approaching(self.ninja[index],self.mainCharacterLabel)
     
     def randomTeleport(self):
         randomTeleporter = random.randint(0,int(self.ninjaCount/5))
-        for index in range(randomTeleporter):
-            x,y = self.generateRandomXY()
-            self.ninja[index].move(x,y)
-            # self.disappear_Thread = disappear_Thread(self,self.ninja[index])
-            # self.disappear_Thread.start()
-            
+        self.disappear_Thread = teleport_Thread(self,randomTeleporter)
+        self.disappear_Thread.start()
 
     def keyPressEvent(self,event):
         """
@@ -216,31 +217,36 @@ class MainPage(QMainWindow,Ui_mainWindow):
 
 # -----------------------------------------------Threading-----------------------------------------------
 
-class hurtSound_Thread(QThread):
+class playSound_Thread(QThread):
     """
-    hurt sound thread
+    play sound thread
     """
-    def __init__(self,parent):
+    def __init__(self,parent,sound):
         super().__init__(parent)
-        self.hurtSound = HURT_SOUND
+        self.sound = sound
     
     def run(self):
-        playsound.playsound(self.hurtSound)
+        playsound.playsound(self.sound)
 
-
-class disappear_Thread(QThread):
+class teleport_Thread(QThread):
     """
-    main characacter attack thread(unfinished)
+    main characacter attack thread
     """
-    def __init__(self,parent,ninja):
+    def __init__(self,parent,randomTeleporter):
         super().__init__(parent)
         self.mainWindow = parent
-        self.ninja = ninja
+        self.randomTeleporter = randomTeleporter
     
     def run(self) -> None:
-        self.ninja.setPixmap(self.loadImage())
-        self.ninja.setEnabled(False)
+        print(self.randomTeleporter)
+        for index in range(self.randomTeleporter):
+            self.mainWindow.ninja[index].setPixmap(self.loadImage(DISAPPEAR_IMAGE))
+            playsound.playsound(DISAPPEAR_SOUND)
+            x,y = self.generateRandomXY()
+            self.mainWindow.ninja[index].move(x,y)
 
-    def loadImage(self):
-        return self.mainWindow.imageToPixmap(DISAPPEAR_IMAGE)
+    def loadImage(self,image):
+        return self.mainWindow.imageToPixmap(image)
     
+    def generateRandomXY(self):
+        return self.mainWindow.generateRandomXY()
