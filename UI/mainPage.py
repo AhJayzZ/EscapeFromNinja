@@ -21,13 +21,13 @@ MAIN_CHARACTER_IMAGE = cv2.imread('UI/images/mainCharacter.jpg')
 NINJA_IMAGE = cv2.imread('UI/images/ninja.png')
 DISAPPEAR_IMAGE = cv2.imread('UI/images/disappear.png')
 
-MOVING_TRIGGER = 200
+MOVING_TRIGGER = 300
 TELEPORT_TRIGGER = 2000
 RESPAWN_TIME_INIT = 1000
 RESPAWN_TIME_MIN = 200
 TIME_AMOUNT = 10
 MOVE_AMOUNT = 20
-NINJA_MAX = 200
+NINJA_MAX = 150
 DETECTED_DISTANCE = 50
 EDGE_DISTANCE = 60
 DAMAGE = 5
@@ -184,8 +184,7 @@ class MainPage(QMainWindow,Ui_mainWindow):
             self.approaching(self.ninja[index],self.mainCharacterLabel)
     
     def randomTeleport(self):
-        randomTeleporter = random.randint(0,int(self.ninjaCount/5))
-        self.disappear_Thread = teleport_Thread(self,randomTeleporter)
+        self.disappear_Thread = teleport_Thread(self)
         self.disappear_Thread.start()
 
     def keyPressEvent(self,event):
@@ -230,23 +229,30 @@ class playSound_Thread(QThread):
 
 class teleport_Thread(QThread):
     """
-    main characacter attack thread
+    ninja disappear thread
     """
-    def __init__(self,parent,randomTeleporter):
+    soundSignal = pyqtSignal(int)
+    def __init__(self,parent):
         super().__init__(parent)
         self.mainWindow = parent
-        self.randomTeleporter = randomTeleporter
+        self.ninjaCount = parent.ninjaCount
+        self.randomTeleporter = random.randint(0,int(self.ninjaCount/5))
+        self.soundSignal.connect(self.playSound)
     
     def run(self) -> None:
-        print(self.randomTeleporter)
-        for index in range(self.randomTeleporter):
-            self.mainWindow.ninja[index].setPixmap(self.loadImage(DISAPPEAR_IMAGE))
-            playsound.playsound(DISAPPEAR_SOUND)
+        for i in range(self.randomTeleporter):
+            randomIndex = random.randint(0,self.ninjaCount-1)
+            self.mainWindow.ninja[randomIndex].setPixmap(self.loadImage(DISAPPEAR_IMAGE))
+            self.soundSignal.emit(1)
             x,y = self.generateRandomXY()
-            self.mainWindow.ninja[index].move(x,y)
+            self.mainWindow.ninja[randomIndex].move(x,y)
 
     def loadImage(self,image):
         return self.mainWindow.imageToPixmap(image)
     
     def generateRandomXY(self):
         return self.mainWindow.generateRandomXY()
+
+    def playSound(self):
+        playSound = playSound_Thread(self,DISAPPEAR_SOUND)
+        playSound.start()
